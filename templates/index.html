@@ -7,28 +7,35 @@
     <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" ></script>
 </head>
 <body>
-    {% if error %}
-    <div class="alert alert-danger" role="alert">{{error}}</div>
-    {% endif %}
-    <form method="POST" id="pl_form" class="form">
-        <div class="form-group">
-            <label for="pl_link">YouTube URL</label>
-            <input type="text" id="pl_link" name="pl_link"/>
-        </div>
-        <button type="submit">Download</button>
-    </form>
-    {% if list %}
-    <table class="table">
-        {% for dl in list %}
-            {% if dl.error %}
-            <tr class="danger">
-            {% elif dl.done %}
-            <tr class="success">
-            {% else %}
-            <tr class="info">
+    <div class="container-fluid">
+        <div class="col-md-6 col-md-offset-3">
+            <div class="page-header">
+                <h1>Playlist downloader</h1>
+            </div>
+            <form style="margin-bottom:20px;" method="POST" id="pl_form" class="form-inline">
+                <div class="form-group">
+                    <label for="pl_link">YouTube URL</label>
+                    <input type="text" id="pl_link" class="form-control" name="pl_link"/>
+                </div>
+                <button type="submit" class="btn btn-default">Download</button>
+            </form>
+            {% if list %}
+            <ul class="list-group">
+                {% for dl in list %}
+                    {% if dl.error %}
+                    <li class="list-group-item list-group-item-danger">
+                    {% elif dl.done %}
+                    <li class="list-group-item list-group-item-success">
+                    <span class="badge">{{ dl.finished }}</span>
+                    {% else %}
+                    <li class="list-group-item list-group-item-info">
+                    <span class="badge">{{ dl.finished }}</span>
+                    {% endif %}
+                    {{ dl.link }}</li>
+                {% endfor %}
+            </ul>
             {% endif %}
-        <td>{{ dl.link }}</td></tr>
-        {% endfor %}
-    </table>
-    {% endif %}
+        </div>
+    </div>
 </body>
+</html>

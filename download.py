@@ -15,6 +15,7 @@ class Download:
     total = 0
     finished = 0
     title = ''
+    ydl = None
 
     def __init__(self, link):
         self.link = link
@@ -24,7 +25,6 @@ class Download:
     def __call__(self, info):
         if info['status'] == 'finished':
             self.finished += 1
-        
         print("\n \n INFO: " + str(info) + "\n")
 
     def download(self):
@@ -41,8 +41,8 @@ class Download:
                 'progress_hooks': [self],
                 'outtmpl': output_tmpl,
             }
-            ydl = YoutubeDL(options)
-            ydl.download([self.link])
+            self.ydl = YoutubeDL(options)
+            self.ydl.download([self.link])
         except DownloadError:
             self.error = True
         finally:
