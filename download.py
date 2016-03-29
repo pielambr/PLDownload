@@ -11,6 +11,9 @@ class Download:
     error = False
     started = None
     uuid = ""
+    total = 0
+    finished = 0
+    title = ""
 
     def __init__(self, link):
         self.link = link
