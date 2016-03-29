@@ -1,16 +1,29 @@
 from flask import Flask, session, render_template, request, send_from_directory
 from uuid import uuid4
 from os import path
-from downloader import Downloader
+from downloadmanager import DownloadManager
+from flask_socketio import SocketIO
 app = Flask(__name__)
+app.debug = True
 app.secret_key = '93)q.2M)k7#X02yt,nbz"eA6EfOw9s$N_e3kh4E'
-downloader = Downloader()
+socketio = SocketIO(app, async_mode='threading')
+downloader = DownloadManager(socketio)
 
 
 @app.before_request
 def before_request():
     if 'session_id' not in session:
         session['session_id'] = str(uuid4())
+
+
+@socketio.on('authentication')
+def socket_authentication(uuid):
+    downloader.register_socket(request.sid, uuid)
+
+
+@socketio.on('disconnect')
+def socket_disconnection():
+    downloader.unregister_socket(request.sid)
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -28,4 +41,4 @@ def download(playlist_id, file):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app)

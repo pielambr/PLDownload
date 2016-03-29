@@ -1,3 +1,5 @@
+import json
+
 import os
 from youtube_dl import YoutubeDL
 from multiprocessing.pool import ThreadPool
@@ -7,25 +9,34 @@ from uuid import uuid4
 
 
 class Download:
-    link = ''
+    link = ""
+    session_id = ""
     done = False
     error = False
     started = None
-    uuid = ''
+    uuid = ""
     total = 0
     finished = 0
-    title = ''
+    title = ""
     ydl = None
+    hook = None
 
-    def __init__(self, link):
+    def __init__(self, session_id, link, hook):
         self.link = link
+        self.session_id = session_id
         self.started = datetime.now()
         self.uuid = str(uuid4())
+        self.hook = hook
 
     def __call__(self, info):
-        if info['status'] == 'finished':
+        finished = info['status'] == 'finished'
+        progress = info['downloaded_bytes'] / info['total_bytes']
+        if finished:
             self.finished += 1
-        print("\n \n INFO: " + str(info) + "\n")
+        filename = info['filename'].split("/")[-1].replace(".m4a", ".mp3")
+        download = "download/" + self.uuid + "/" + filename
+        update = DownloadUpdate(progress, filename, finished, download)
+        self.hook(self.session_id, update)
 
     def download(self):
         curr_path = os.path.dirname(os.path.abspath(__file__))
@@ -57,5 +68,24 @@ class Download:
             return None
 
     def start(self):
-            pool = ThreadPool()
-            pool.apply_async(self.download)
+        pool = ThreadPool()
+        pool.apply_async(self.download)
+
+
+class DownloadUpdate:
+
+    progress = 0
+    filename = ""
+    download_url = ""
+    finished = False
+
+    def __init__(self, progress, filename, finished, download_url):
+        self.progress = progress
+        self.filename = filename
+        if finished:
+            progress = 1
+            finished = True
+            self.download_url = download_url
+
+    def json(self):
+        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
