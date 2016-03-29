@@ -1,4 +1,4 @@
-import os, youtube_dl
+import os
 from youtube_dl import YoutubeDL
 from multiprocessing.pool import ThreadPool
 from youtube_dl.utils import DownloadError
@@ -50,7 +50,11 @@ class Download:
 
     def get_files(self):
         file_path = os.path.dirname(os.path.abspath(__file__)) + '/downloads/' + self.uuid
-        return [f for f in os.listdir(file_path) if os.isfile(os.join(file_path, f))]
+        if os.path.isdir(file_path):
+            return {f: "download/" + self.uuid + "/" + f for f in os.listdir(file_path)
+                    if (os.path.isfile(os.path.join(file_path, f)) and f.endswith(".mp3"))}
+        else:
+            return None
 
     def start(self):
             pool = ThreadPool()

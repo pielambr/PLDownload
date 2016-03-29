@@ -31,7 +31,15 @@
                     <li class="list-group-item list-group-item-info">
                     <span class="badge">{{ dl.finished }}</span>
                     {% endif %}
-                    {{ dl.link }}</li>
+                    {{ dl.link }}
+                    {% if dl.get_files() %}
+                    <ul>
+                        {% for f, l in dl.get_files().items() %}
+                            <li><a href="{{ l }}">{{ f }}</a></li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                    </li>
                 {% endfor %}
             </ul>
             {% endif %}
