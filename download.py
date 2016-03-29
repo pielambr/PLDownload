@@ -32,6 +32,10 @@ class Download:
         finally:
             self.done = True
 
+    def get_files(self):
+        file_path = os.path.dirname(os.path.abspath(__file__)) + "/downloads/" + self.uuid
+        return [f for f in os.listdir(file_path) if os.isfile(os.join(file_path, f))]
+
     def start(self):
             pool = ThreadPool()
             pool.apply_async(self.download)
