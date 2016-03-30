@@ -14,9 +14,7 @@ class DownloadManager:
         for socket in self.sockets:
             if self.sockets[socket] == uuid:
                 try:
-                    process = Process(target=self.socketio.emit, args=('update', message.json(),),
-                                      kwargs={'room': str(socket)})
-                    process.start()
+                    self.socketio.emit('update', message.json(), room=str(socket))
                 except Exception as e:
                     print(e)
 

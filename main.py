@@ -8,7 +8,7 @@ monkey_patch()
 app = Flask(__name__)
 app.debug = True
 app.secret_key = '93)q.2M)k7#X02yt,nbz"eA6EfOw9s$N_e3kh4E'
-socketio = SocketIO(app, async_mode='eventlet')
+socketio = SocketIO(app, async_mode='eventlet', engineio_logger=True, logger=True)
 downloader = DownloadManager(socketio)
 
 
@@ -26,6 +26,12 @@ def socket_authentication(uuid):
 @socketio.on('disconnect')
 def socket_disconnection():
     downloader.unregister_socket(request.sid)
+
+
+@socketio.on_error_default
+def default_error_handler(e):
+    print(request.event["message"]) # "my error event"
+    print(request.event["args"])    # (data,)
 
 
 @app.route('/', methods=['GET', 'POST'])

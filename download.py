@@ -1,8 +1,8 @@
 import json
 
+from threading import Thread
 import os
 from youtube_dl import YoutubeDL
-from multiprocessing import Process
 from youtube_dl.utils import DownloadError
 from datetime import datetime
 from uuid import uuid4
@@ -56,8 +56,8 @@ class Download:
                 'outtmpl': output_tmpl,
             }
             self.ydl = YoutubeDL(options)
-            process = Process(target=self.ydl.download, args=([self.link],))
-            process.start()
+            thread = Thread(target=self.ydl.download, args=([self.link],))
+            thread.start()
         except DownloadError:
             self.error = True
         finally:
