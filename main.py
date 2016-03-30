@@ -29,12 +29,6 @@ def socket_disconnection():
     downloader.unregister_socket(request.sid)
 
 
-@socketio.on_error_default
-def default_error_handler(e):
-    print(request.event["message"]) # "my error event"
-    print(request.event["args"])    # (data,)
-
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
