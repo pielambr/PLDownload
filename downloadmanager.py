@@ -1,5 +1,6 @@
+from threading import Thread
+
 from download import Download
-from multiprocessing import Process, Lock
 
 
 class DownloadManager:
@@ -23,11 +24,12 @@ class DownloadManager:
         if session not in self.downloads:
             self.downloads[session] = []
         self.downloads[session].append(download)
-        download.download()
+        thread = Thread(target=download.start)
+        thread.start()
 
     def get_downloads(self, session):
         try:
-            return self.downloads[session]
+            return reversed(self.downloads[session])
         except KeyError:
             return None
 

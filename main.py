@@ -1,14 +1,15 @@
-from flask import Flask, session, render_template, request, send_from_directory
 from uuid import uuid4
-from os import path
+
 from downloadmanager import DownloadManager
-from flask_socketio import SocketIO
 from eventlet import monkey_patch
+from flask import Flask, session, render_template, request, send_from_directory
+from flask_socketio import SocketIO
+from os import path
+
 monkey_patch()
 app = Flask(__name__)
-app.debug = True
 app.secret_key = '93)q.2M)k7#X02yt,nbz"eA6EfOw9s$N_e3kh4E'
-socketio = SocketIO(app, async_mode='eventlet', engineio_logger=True, logger=True)
+socketio = SocketIO(app, async_mode='eventlet')
 downloader = DownloadManager(socketio)
 
 

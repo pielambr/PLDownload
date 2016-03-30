@@ -24,12 +24,12 @@
             <ul class="list-group">
                 {% for dl in list %}
                     {% if dl.error %}
-                    <li class="list-group-item list-group-item-danger">
+                    <li  id="{{ dl.playlist_id }}" class="list-group-item list-group-item-danger">
                     {% elif dl.done %}
-                    <li class="list-group-item list-group-item-success">
+                    <li  id="{{ dl.playlist_id }}" class="list-group-item list-group-item-success">
                     <span class="badge">{{ dl.finished }}</span>
                     {% else %}
-                    <li class="list-group-item list-group-item-info">
+                    <li  id="{{ dl.playlist_id }}" class="list-group-item list-group-item-info">
                     <span class="badge">{{ dl.finished }}</span>
                     {% endif %}
                     {{ dl.link }}
@@ -53,7 +53,30 @@
             socket.emit("authentication", "{{ session["session_id"] }}");
         });
         socket.on('update', function(data) {
-            console.log(data);
+            data = JSON.parse(data);
+            var playlist = $("#" + data.playlist_id);
+            // Create <ul> if our playlist doesn't have any items yet
+            if(!playlist.has("ul").length) {
+                playlist.append($("<ul>"));
+            }
+            var playlist_ul = playlist.find("ul").first();
+            // If our download is finished, remove in progress and add
+            // the completed download
+            if(data.finished) {
+                finished = $("<li>").append(
+                    $("<a>").attr('href', 'download/' + data.playlist_id + "/" + data.filename).text(data.filename));
+                playlist_ul.find(".in_progress").remove();
+                playlist_ul.append(finished);
+            } else {
+                playlist_ul.find(".in_progress").remove();
+                percentage = data.progress * 100;
+                progress_bar = $("<div>").attr("class", "progress").append(
+                $("<div>").attr("class", "progress-bar progress-bar-success progress-bar-striped")
+                .attr("aria-valuenow", percentage).attr("aria-valuemin", 0).attr("aria-valuemax", 100)
+                .width(percentage + "%"));
+                progress = $("<li>").attr("class", "in_progress").text(data.filename).append(progress_bar);
+                playlist_ul.append(progress);
+            }
         });
     });
     </script>
