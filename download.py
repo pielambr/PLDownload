@@ -2,7 +2,7 @@ import json
 
 import os
 from youtube_dl import YoutubeDL
-from multiprocessing.pool import ThreadPool
+from multiprocessing import Process
 from youtube_dl.utils import DownloadError
 from datetime import datetime
 from uuid import uuid4
@@ -49,11 +49,15 @@ class Download:
                     'preferredcodec': 'mp3',
                     'preferredquality': '5',
                 }],
+                'socket_timeout': '15',
                 'progress_hooks': [self],
+                'logger': MyLogger(),
+                'verbose': True,
                 'outtmpl': output_tmpl,
             }
             self.ydl = YoutubeDL(options)
-            self.ydl.download([self.link])
+            process = Process(target=self.ydl.download, args=([self.link],))
+            process.start()
         except DownloadError:
             self.error = True
         finally:
@@ -66,10 +70,6 @@ class Download:
                     if (os.path.isfile(os.path.join(file_path, f)) and f.endswith(".mp3"))}
         else:
             return None
-
-    def start(self):
-        pool = ThreadPool()
-        pool.apply_async(self.download)
 
 
 class DownloadUpdate:
@@ -89,3 +89,14 @@ class DownloadUpdate:
 
     def json(self):
         return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+
+class MyLogger(object):
+    def debug(self, msg):
+        print(msg)
+
+    def warning(self, msg):
+        print(msg)
+
+    def error(self, msg):
+        print(msg)

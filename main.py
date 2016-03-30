@@ -3,10 +3,12 @@ from uuid import uuid4
 from os import path
 from downloadmanager import DownloadManager
 from flask_socketio import SocketIO
+from eventlet import monkey_patch
+monkey_patch()
 app = Flask(__name__)
 app.debug = True
 app.secret_key = '93)q.2M)k7#X02yt,nbz"eA6EfOw9s$N_e3kh4E'
-socketio = SocketIO(app, async_mode='threading')
+socketio = SocketIO(app, async_mode='eventlet')
 downloader = DownloadManager(socketio)
 
 

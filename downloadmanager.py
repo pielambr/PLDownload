@@ -1,10 +1,9 @@
 from download import Download
-from threading import Lock
+from multiprocessing import Process, Lock
 
 
 class DownloadManager:
 
-    mutex = Lock()
     downloads = {}
     sockets = {}
 
@@ -12,17 +11,21 @@ class DownloadManager:
         self.socketio = socketio
 
     def __call__(self, uuid, message):
-        self.socketio.emit('update', message.json())
         for socket in self.sockets:
             if self.sockets[socket] == uuid:
-                self.socketio.emit('update', message.json(), room=socket)
+                try:
+                    process = Process(target=self.socketio.emit, args=('update', message.json(),),
+                                      kwargs={'room': str(socket)})
+                    process.start()
+                except Exception as e:
+                    print(e)
 
     def add_download(self, session, link):
         download = Download(session, link, self)
         if session not in self.downloads:
             self.downloads[session] = []
         self.downloads[session].append(download)
-        download.start()
+        download.download()
 
     def get_downloads(self, session):
         try:
@@ -34,8 +37,6 @@ class DownloadManager:
         self.sockets[socket_id] = session_id
 
     def unregister_socket(self, socket_id):
-        self.mutex.acquire()
         if socket_id in self.sockets:
             del self.sockets[socket_id]
-        self.mutex.release()
 
