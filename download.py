@@ -65,6 +65,7 @@ class Download:
                 }],
                 'socket_timeout': '15',
                 'progress_hooks': [self],
+                'ignoreerrors': True,
                 'outtmpl': output_tmpl,
             }
             ydl = YoutubeDL(options)
