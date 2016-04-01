@@ -31,8 +31,8 @@ class DownloadManager:
             if session not in self.downloads:
                 self.downloads[session] = []
             self.downloads[session].append(download)
-            exec = ThreadPoolExecutor(max_workers=4)
-            exec.submit(download.start)
+            executor = ThreadPoolExecutor(max_workers=4)
+            executor.submit(download.start)
 
     def get_downloads(self, session):
         with self.download_lock:
