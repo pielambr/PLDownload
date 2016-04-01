@@ -48,7 +48,7 @@
     </div>
     <script type="text/javascript">
     $(document).ready(function(){
-        var socket = io.connect('https://pielambr.be/youtube/');
+        var socket = io.connect('https://www.pielambr.be', {'path': '/youtube/socket.io'});
         socket.on('connect', function() {
             socket.emit("authentication", "{{ session["session_id"] }}");
         });
