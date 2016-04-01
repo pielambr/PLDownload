@@ -1,16 +1,20 @@
+from os import path
 from uuid import uuid4
 
-from downloadmanager import DownloadManager
+from apscheduler.schedulers.background import BackgroundScheduler
 from eventlet import monkey_patch
 from flask import Flask, session, render_template, request, send_from_directory
 from flask_socketio import SocketIO
-from os import path
+
+from downloadmanager import DownloadManager
 
 monkey_patch()
+cleaner = BackgroundScheduler()
 app = Flask(__name__)
 app.secret_key = '93)q.2M)k7#X02yt,nbz"eA6EfOw9s$N_e3kh4E'
 socketio = SocketIO(app, async_mode='eventlet')
 downloader = DownloadManager(socketio)
+cleaner.add_job(downloader.cleanup, 'interval', minutes=5)
 
 
 @app.before_request
@@ -44,4 +48,5 @@ def download(playlist_id, file):
 
 
 if __name__ == '__main__':
+    cleaner.start()
     socketio.run(app)

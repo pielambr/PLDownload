@@ -1,8 +1,9 @@
 import json
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
+from shutil import rmtree
 from uuid import uuid4
 
-import os
 from youtube_dl import YoutubeDL
 from youtube_dl.utils import DownloadError
 
@@ -42,6 +43,14 @@ class Download:
                     if (os.path.isfile(os.path.join(file_path, f)) and f.endswith(".mp3"))}
         else:
             return None
+
+    def remove(self):
+        if (self.done or self.error) and (datetime.now() > self.started + timedelta(hours=1)):
+            curr_path = os.path.dirname(os.path.abspath(__file__))
+            rm_dir = curr_path + '/downloads/' + self.playlist_id
+            rmtree(rm_dir, True)
+            return True
+        return False
 
     def start(self):
         curr_path = os.path.dirname(os.path.abspath(__file__))
