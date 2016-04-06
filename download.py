@@ -61,7 +61,7 @@ class Download:
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
-                    'preferredquality': '0',
+                    'preferredquality': '1',
                 }],
                 'socket_timeout': '15',
                 'progress_hooks': [self],
