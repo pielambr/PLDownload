@@ -16,22 +16,22 @@ class DownloadManager:
     def __init__(self, socketio):
         self.socketio = socketio
 
-    def __call__(self, uuid, message):
+    def __call__(self, session_id, message):
         sockets_copy = deepcopy(self.sockets)
         for socket in sockets_copy:
-            if self.sockets[socket] == uuid:
+            if self.sockets[socket] == session_id:
                 try:
-                    self.socketio.emit('update', message.json(), room=str(socket))
+                    self.socketio.emit(message.type, message.json(), room=str(socket))
                 except Exception as e:
                     print(e)
 
-    def add_download(self, session, link):
+    def add_download(self, session_id, link):
         with self.download_lock:
-            download = Download(session, link, self)
-            if session not in self.downloads:
-                self.downloads[session] = []
-            self.downloads[session].append(download)
-            executor = ThreadPoolExecutor(max_workers=4)
+            download = Download(session_id, link, self)
+            if session_id not in self.downloads:
+                self.downloads[session_id] = []
+            self.downloads[session_id].append(download)
+            executor = ThreadPoolExecutor(max_workers=2)
             executor.submit(download.start)
 
     def get_downloads(self, session):
@@ -40,6 +40,21 @@ class DownloadManager:
                 return reversed(self.downloads[session])
             except KeyError:
                 return None
+
+    def zip_download(self, session_id, playlist_id):
+        if session_id not in self.downloads:
+            raise LookupError("No downloads found for this session")
+        download = next((dl for dl in self.downloads[session_id] if dl.playlist_id == playlist_id), None)
+        if download is None:
+            raise LookupError("This playlist was not found for your session")
+        elif download.zipping:
+            return None
+        elif not download.zipping and not download.zipped:
+            executor = ThreadPoolExecutor(max_workers=2)
+            executor.submit(download.zip)
+            return None
+        elif download.zipped:
+            return download.file_path
 
     def cleanup(self):
         with self.download_lock:

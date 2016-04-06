@@ -3,9 +3,27 @@
 <head>
     <title>PLDownload</title>
     <link type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" />
-    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.2.min.js"></script>
-    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" ></script>
-    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <style>
+    .badge-right {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        text-align: center;
+        width: 70px;
+    }
+    .badge-notify{
+       background:red;
+       position: absolute;
+       top: 5px;
+       right: 10px;
+    }
+    .btn-badge {
+        font-size: 36px;
+    }
+    .btn-ready {
+        color: green;
+    }
+    </style>
 </head>
 <body>
     <div class="container-fluid">
@@ -25,13 +43,21 @@
                 {% for dl in list %}
                     {% if dl.error %}
                     <li  id="{{ dl.playlist_id }}" class="list-group-item list-group-item-danger">
-                    {% elif dl.done %}
+                    {% elif dl.completed %}
                     <li  id="{{ dl.playlist_id }}" class="list-group-item list-group-item-success">
-                    <span class="badge">{{ dl.finished }}</span>
                     {% else %}
                     <li  id="{{ dl.playlist_id }}" class="list-group-item list-group-item-info">
-                    <span class="badge">{{ dl.finished }}</span>
                     {% endif %}
+                    <div class="badge-right">
+                        {% if dl.zipped %}
+                        <button class="btn btn-ready btn-lg btn-link btn-badge">
+                        {% else %}
+                        <button class="btn btn-lg btn-link btn-badge">
+                        {% endif %}
+                            <span class="glyphicon glyphicon-download"></span>
+                        </button>
+                        <span class="badge badge-notify">{{ dl.total_completed }}</span>
+                    </div>
                     {{ dl.link }}
                     {% if dl.get_files() %}
                     <ul>
@@ -46,36 +72,79 @@
             {% endif %}
         </div>
     </div>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.2.2.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" ></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-noty/2.3.8/jquery.noty.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-noty/2.3.8/layouts/topRight.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-noty/2.3.8/themes/relax.min.js"></script>
+    <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
     <script type="text/javascript">
     $(document).ready(function(){
-        var socket = io.connect('https://www.pielambr.be', {'path': '/youtube/socket.io'});
+        $(".badge-right button").click(function() {
+            var playlist_id = $(this).parent().parent().attr("id");
+            $.ajax('download/' + playlist_id + '/status').always(function(xhr) {
+                if (xhr.status == 202) {
+                    noty({text: 'Please hold on, your zip file is being created! Please try again soon.',
+                    type: 'information', layout: 'topRight', theme: 'relax'});
+                } else if (xhr.status == 404) {
+                    noty({text: 'This playlist was not found for the current session!', type: 'error',
+                    layout: 'topRight', theme: 'relax'});
+                } else {
+                    noty({text: 'Please hold on, your download is starting!', type: 'success', layout: 'topRight',
+                    theme: 'relax'});
+                    window.location.assign('download/' + playlist_id);
+                }
+            });
+        });
+        var socket = io.connect('http://localhost:5000');
         socket.on('connect', function() {
             socket.emit("authentication", "{{ session["session_id"] }}");
         });
-        socket.on('update', function(data) {
+        socket.on('download_update', function(data) {
             data = JSON.parse(data);
             var playlist = $("#" + data.playlist_id);
+            var playlist_zip = playlist.find("div").first();
+            var playlist_completed = playlist_zip.children("span").first();
             // Create <ul> if our playlist doesn't have any items yet
             if(!playlist.has("ul").length) {
                 playlist.append($("<ul>"));
             }
             var playlist_ul = playlist.find("ul").first();
-            // If our download is finished, remove in progress and add
-            // the completed download
-            if(data.finished) {
+            // If our download is finished, remove in progress and add the completed download
+            if(data.file_completed) {
                 finished = $("<li>").append(
-                    $("<a>").attr('href', 'download/' + data.playlist_id + "/" + data.filename).text(data.filename));
+                    $("<a>").attr('href', 'download/' + data.playlist_id + "/" + data.current_filename).
+                    text(data.current_filename));
+                playlist_completed.text(data.total_completed);
                 playlist_ul.find(".in_progress").remove();
                 playlist_ul.append(finished);
             } else {
                 playlist_ul.find(".in_progress").remove();
-                percentage = data.progress * 100;
                 progress_bar = $("<div>").attr("class", "progress").append(
                 $("<div>").attr("class", "progress-bar progress-bar-success progress-bar-striped")
-                .attr("aria-valuenow", percentage).attr("aria-valuemin", 0).attr("aria-valuemax", 100)
-                .width(percentage + "%"));
-                progress = $("<li>").attr("class", "in_progress").text(data.filename).append(progress_bar);
+                .attr("aria-valuenow", data.file_progress).attr("aria-valuemin", 0).attr("aria-valuemax", 100)
+                .width(data.file_progress + "%"));
+                progress = $("<li>").attr("class", "in_progress").text(data.current_filename).append(progress_bar);
                 playlist_ul.append(progress);
+            }
+        });
+        socket.on('playlist_update', function(data){
+            data = JSON.parse(data);
+            var playlist = $("#" + data.playlist_id);
+            if(data.playlist_completed) {
+                if(data.playlist_error) {
+                    playlist.attr("class", "list-group-item list-group-item-danger");
+                } else {
+                    playlist.attr("class", "list-group-item list-group-item-success");
+                }
+            }
+        });
+        socket.on('zip_update', function(data) {
+            data = JSON.parse(data);
+            var playlist = $("#" + data.playlist_id);
+            var playlist_zip = playlist.find("button").first();
+            if(data.finished) {
+                playlist_zip.attr("class", "btn btn-ready btn-lg btn-link btn-badge");
             }
         });
     });

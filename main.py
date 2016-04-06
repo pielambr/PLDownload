@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from eventlet import monkey_patch
-from flask import Flask, session, render_template, request, send_from_directory
+from flask import Flask, session, render_template, request, send_from_directory, abort
 from flask_socketio import SocketIO
 
 from downloadmanager import DownloadManager
@@ -40,11 +40,35 @@ def index():
     return render_template("index.html", list=downloader.get_downloads(session['session_id']))
 
 
+@app.route('/download/<playlist_id>/status', methods=['GET'])
+def download_zip_status(playlist_id):
+    try:
+        dl_path = downloader.zip_download(session['session_id'], playlist_id)
+        if dl_path is None:
+            return "", 202
+        else:
+            return "", 200
+    except LookupError as e:
+        abort(404, e)
+
+
 @app.route('/download/<playlist_id>/<file>', methods=['GET'])
 def download(playlist_id, file):
     curr_path = path.dirname(path.abspath(__file__))
     dl_path = curr_path + '/downloads/' + playlist_id + '/'
     return send_from_directory(dl_path, file)
+
+
+@app.route('/download/<playlist_id>', methods=['GET'])
+def download_zip(playlist_id):
+    try:
+        dl_path = downloader.zip_download(session['session_id'], playlist_id)
+        if dl_path is None:
+            return "", 202
+        else:
+            return send_from_directory(dl_path, "playlist.zip")
+    except LookupError as e:
+        abort(404, e)
 
 
 if __name__ == '__main__':
