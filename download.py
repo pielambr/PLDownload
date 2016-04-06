@@ -32,7 +32,7 @@ class Download:
         progress = info['downloaded_bytes'] / info['total_bytes']
         if finished:
             self.finished += 1
-        filename = info['filename'].split("/")[-1].replace(".m4a", ".mp3")
+        filename = info['filename'].split("/")[-1].replace(".m4a", ".mp3").replace(".webm", ".mp3")
         update = DownloadUpdate(progress, filename, self.playlist_id, finished)
         self.hook(self.session_id, update)
 
@@ -61,7 +61,7 @@ class Download:
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
-                    'preferredquality': '1',
+                    'preferredquality': '3',
                 }],
                 'socket_timeout': '15',
                 'progress_hooks': [self],
