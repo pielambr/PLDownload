@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 from shutil import rmtree
 from uuid import uuid4
 from zipfile import ZipFile
-from update import DownloadUpdate, PlaylistUpdate, ZipUpdate
 
 from youtube_dl import YoutubeDL
-from youtube_dl.utils import DownloadError
+
+from update import DownloadUpdate, PlaylistUpdate, ZipUpdate
 
 
 class Download:
@@ -62,28 +62,23 @@ class Download:
     def start(self):
         curr_path = os.path.dirname(os.path.abspath(__file__))
         output_tmpl = curr_path + '/downloads/' + self.playlist_id + '/%(title)s-%(id)s.%(ext)s'
-        try:
-            options = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '3',
-                }],
-                'socket_timeout': '15',
-                'progress_hooks': [self],
-                'ignoreerrors': True,
-                'outtmpl': output_tmpl,
-            }
-            ydl = YoutubeDL(options)
-            ydl.download([self.link])
-        except DownloadError:
-            self.error = True
-            update = PlaylistUpdate(self.playlist_id, playlist_error=True,
-                                    total_completed=self.total_completed)
-            self.hook(self.session_id, update)
-        finally:
-            self.completed = True
-            update = PlaylistUpdate(self.playlist_id, total_completed=self.total_completed)
-            self.hook(self.session_id, update)
+        options = {
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '3',
+            }],
+            'socket_timeout': '15',
+            'progress_hooks': [self],
+            'ignoreerrors': True,
+            'outtmpl': output_tmpl,
+        }
+        ydl = YoutubeDL(options)
+        return_code = ydl.download([self.link])
+        self.completed = True
+        self.error = return_code != 0
+        update = PlaylistUpdate(self.playlist_id, playlist_error=self.error,
+                                total_completed=self.total_completed)
+        self.hook(self.session_id, update)
 

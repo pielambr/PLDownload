@@ -1,6 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
-from threading import RLock
 from copy import deepcopy
+from threading import RLock
 
 from download import Download
 
