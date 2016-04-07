@@ -12,10 +12,10 @@
         width: 70px;
     }
     .badge-notify{
-       background:red;
-       position: absolute;
-       top: 5px;
-       right: 10px;
+        background:red;
+        position: absolute;
+        top: 5px;
+        right: 10px;
     }
     .btn-badge {
         font-size: 36px;
@@ -80,21 +80,25 @@
     <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
     <script type="text/javascript">
     $(document).ready(function(){
-        $(".badge-right button").click(function() {
+        $(".badge-right button").click(function(ev) {
+            ev.preventDefault();
             var playlist_id = $(this).parent().parent().attr("id");
-            $.ajax('download/' + playlist_id + '/status').always(function(xhr) {
-                if (xhr.status == 202) {
-                    noty({text: 'Please hold on, your zip file is being created! Please try again soon.',
+            $.ajax({url: 'download/' + playlist_id + '/status',
+            statusCode: {
+                202: function() {
+                    noty({text: 'Please hold on, your zip file is being created! Please try again soon!',
                     type: 'information', layout: 'topRight', theme: 'relax'});
-                } else if (xhr.status == 404) {
+                },
+                404: function() {
                     noty({text: 'This playlist was not found for the current session!', type: 'error',
                     layout: 'topRight', theme: 'relax'});
-                } else {
+                },
+                200: function() {
                     noty({text: 'Please hold on, your download is starting!', type: 'success', layout: 'topRight',
                     theme: 'relax'});
                     window.location.assign('download/' + playlist_id);
                 }
-            });
+            }});
         });
         var socket = io.connect('https://www.pielambr.be', {'path': '/youtube/socket.io'});
         socket.on('connect', function() {
@@ -145,6 +149,8 @@
             var playlist_zip = playlist.find("button").first();
             if(data.finished) {
                 playlist_zip.attr("class", "btn btn-ready btn-lg btn-link btn-badge");
+                noty({text: 'Your zip file is now ready for downloading!', type: 'success', layout: 'topRight',
+                theme: 'relax'});
             }
         });
     });
